@@ -66,6 +66,11 @@ app.get('/api/:date?', (req, res) => {
 });
 
 function validateDate(date_string) {
+  var isTimestamp = /^\d+$/.test(date_string) && date_string.length == 13;
+  if (isTimestamp) {
+    return new Date(parseInt(date_string));
+  }
+
   return new Date(date_string);
 }
 
