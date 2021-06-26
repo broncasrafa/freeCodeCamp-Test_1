@@ -33,36 +33,57 @@ app.get('/api/:date?', (req, res) => {
     return res.json({ unix: date.getTime(), utc: date.toUTCString() });
   }
 
-  var isValidDate = validateDate(value);
+  var timestamp = 0;
+  var unixResult = 0;
+  var utcResult = '';
+  let isOnlyNumbers = /^\d+$/.test(value);
 
-  if (isValidDate == 'Invalid Date') {
+  if (isOnlyNumbers) {
+    timestamp = new Date(parseInt(value));
+    unixResult = timestamp.valueOf();
+    utcResult = timestamp.toUTCString();
+  } else {
+    timestamp = new Date(value);
+    unixResult = timestamp.valueOf();
+    utcResult = timestamp.toUTCString();
+  }
+
+  if (utcResult == 'Invalid Date') {
     return res.json({ error : "Invalid Date" });
   }
 
-  var unixResult = 0;
-  var utcResult = '';
+  res.json({ unix: unixResult, utc: utcResult });
 
-  if (value.includes('-')) {
-    var isValid = (new Date(value)).getTime() > 0;
-    if (isValid) {
-      var parts = value.split('-');
-      var date = new Date(parts[0], parts[1]-1, parts[2]); 
-      unixResult = date.getTime(); 
-      utcResult = date.toUTCString();     
-    } else {
-      return res.json({ error : "Invalid Date" });
-    }
-  } else {
-    var isValid = (new Date(parseInt(value))).getTime() > 0;
-    if (isValid) {
-      unixResult = parseInt(value);
-      utcResult = new Date(parseInt(value)).toUTCString();
-    } else {
-      return res.json({ error : "Invalid Date" });
-    }    
-  }
+  // var isValidDate = validateDate(value);
 
-  return res.json({ unix: unixResult, utc: utcResult });
+  // if (isValidDate == 'Invalid Date') {
+  //   return res.json({ error : "Invalid Date" });
+  // }
+
+  // var unixResult = 0;
+  // var utcResult = '';
+
+  // if (value.includes('-')) {
+  //   var isValid = (new Date(value)).getTime() > 0;
+  //   if (isValid) {
+  //     var parts = value.split('-');
+  //     var date = new Date(parts[0], parts[1]-1, parts[2]); 
+  //     unixResult = date.getTime(); 
+  //     utcResult = date.toUTCString();     
+  //   } else {
+  //     return res.json({ error : "Invalid Date" });
+  //   }
+  // } else {
+  //   var isValid = (new Date(parseInt(value))).getTime() > 0;
+  //   if (isValid) {
+  //     unixResult = parseInt(value);
+  //     utcResult = new Date(parseInt(value)).toUTCString();
+  //   } else {
+  //     return res.json({ error : "Invalid Date" });
+  //   }    
+  // }
+
+  // return res.json({ unix: unixResult, utc: utcResult });
 });
 
 function validateDate(date_string) {
