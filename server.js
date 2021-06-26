@@ -24,7 +24,7 @@ app.get("/api/hello", function (req, res) {
   res.json({greeting: 'hello API'});
 });
 
-app.get('/api/:date?', (req, res) => {
+app.get('/api/timestamp/:date?', (req, res) => {
   var value = req.params.date;    
 
   // data vazia retorna data atual
@@ -54,46 +54,14 @@ app.get('/api/:date?', (req, res) => {
 
   res.json({ unix: unixResult, utc: utcResult });
 
-  // var isValidDate = validateDate(value);
-
-  // if (isValidDate == 'Invalid Date') {
-  //   return res.json({ error : "Invalid Date" });
-  // }
-
-  // var unixResult = 0;
-  // var utcResult = '';
-
-  // if (value.includes('-')) {
-  //   var isValid = (new Date(value)).getTime() > 0;
-  //   if (isValid) {
-  //     var parts = value.split('-');
-  //     var date = new Date(parts[0], parts[1]-1, parts[2]); 
-  //     unixResult = date.getTime(); 
-  //     utcResult = date.toUTCString();     
-  //   } else {
-  //     return res.json({ error : "Invalid Date" });
-  //   }
-  // } else {
-  //   var isValid = (new Date(parseInt(value))).getTime() > 0;
-  //   if (isValid) {
-  //     unixResult = parseInt(value);
-  //     utcResult = new Date(parseInt(value)).toUTCString();
-  //   } else {
-  //     return res.json({ error : "Invalid Date" });
-  //   }    
-  // }
-
-  // return res.json({ unix: unixResult, utc: utcResult });
 });
 
-function validateDate(date_string) {
-  var isTimestamp = /^\d+$/.test(date_string) && date_string.length == 13;
-  if (isTimestamp) {
-    return new Date(parseInt(date_string));
-  }
-
-  return new Date(date_string);
-}
+app.get('/api/whoami', (req, res) => {
+  var ipaddress = req.ip;
+  var language = req.headers['accept-language'];
+  var software = req.headers['user-agent'];
+  res.json({ ipaddress: ipaddress, language: language, software: software})
+})
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
