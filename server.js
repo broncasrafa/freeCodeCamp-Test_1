@@ -33,6 +33,12 @@ app.get('/api/:date?', (req, res) => {
     return res.json({ unix: date.getTime(), utc: date.toUTCString() });
   }
 
+  var isValidDate = validateDate(value);
+
+  if (isValidDate == 'Invalid Date') {
+    return res.json({ error : "Invalid Date" });
+  }
+
   var unixResult = 0;
   var utcResult = '';
 
@@ -59,12 +65,14 @@ app.get('/api/:date?', (req, res) => {
   return res.json({ unix: unixResult, utc: utcResult });
 });
 
-
+function validateDate(date_string) {
+  return new Date(date_string);
+}
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
   var port = listener.address().port;
 
   console.log(`Your app is listening on port ${port}`);
-  console.log(`Your app is running on link http://localhost/${port}`);
+  console.log(`Your app is running on link http://localhost:${port}`);
 });
