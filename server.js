@@ -10,6 +10,7 @@ var connectDB = require('./config/db');
 var dns = require('dns');
 
 var Url = require('./models/url');
+var UrlTested = require('./models/url_tested');
 
 var app = express();
 
@@ -83,8 +84,16 @@ app.post('/api/shorturl', (req, res) => {
   var url = req.body.url;
   var isValidUrl = validateUrl(url);
 
+  var urlTestada = new UrlTested({ url: url});
+  urlTestada.save((err, data) => {
+    if (err) 
+      return res.status(500).json('Server error');
+
+    console.log(url);
+  });
+
   if (!isValidUrl) {
-    return res.status(401).json({ error: 'invalid url'});
+    return res.json({ error: 'invalid url'});
   }
 
   try {
