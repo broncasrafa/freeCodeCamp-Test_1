@@ -7,6 +7,7 @@ var validUrl = require('valid-url');
 var shortid = require('shortid');
 var bodyParser = require("body-parser");
 var connectDB = require('./config/db');
+var dns = require('dns');
 
 var Url = require('./models/url');
 
@@ -82,42 +83,51 @@ app.post('/api/shorturl', (req, res) => {
   var url = req.body.url;
   var isValidUrl = validateUrl(url);
 
-  if (!isValidUrl) {
-    return res.status(401).json({ error: 'invalid url'});
-  }
+  // if (!isValidUrl) {
+  //   return res.status(401).json({ error: 'invalid url'});
+  // }
+
+  const REPLACE_REGEX = /^https?:\/\//i
+  const formattedUrl = url.replace(REPLACE_REGEX, '');
+  dns.lookup(formattedUrl, function (err, address, family) {
+    if (address == undefined || address == null) {
+      return res.status(401).json({ error: 'invalid url'});
+    }
+
+    try {
+      Url.findOne({ originalUrl: url }, (err, docUrl) => {
+        if (err) { 
+          return res.status(404).json({ error: 'url not found'});
+        }
   
-  try {
-    Url.findOne({ originalUrl: url }, (err, docUrl) => {
-      if (err) { 
-        return res.status(404).json({ error: 'url not found'});
-      }
-
-      // url ja existente
-      if (docUrl) {
-        return res.json({ original_url: docUrl.originalUrl , short_url: docUrl.shortUrl });
-      }
-
-      // cria a shortId code
-      const urlCode = shortid.generate();
-
-      var newUrl = new Url({
-        originalUrl: url,
-        shortUrl: urlCode,
-        longUrl: `${baseUrl}/api/shorturl/${urlCode}`
-      });
-
-      newUrl.save(function(err, data) {
-        if (err) 
-          return res.status(500).json('Server error');
-    
-          return res.json({original_url: url, short_url: urlCode});
-      });
+        // url ja existente
+        if (docUrl) {
+          return res.json({ original_url: docUrl.originalUrl , short_url: docUrl.shortUrl });
+        }
+  
+        // cria a shortId code
+        const urlCode = shortid.generate();
+  
+        var newUrl = new Url({
+          originalUrl: url,
+          shortUrl: urlCode,
+          longUrl: `${baseUrl}/api/shorturl/${urlCode}`
+        });
+  
+        newUrl.save(function(err, data) {
+          if (err) 
+            return res.status(500).json('Server error');
       
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json('Server error');
-  }
+            return res.json({original_url: url, short_url: urlCode});
+        });
+        
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json('Server error');
+    }
+  });
+    
 });
 
 app.get('/api/shorturl/:short_url', (req, res) => {
@@ -133,8 +143,9 @@ app.get('/api/shorturl/:short_url', (req, res) => {
 })
 
 function validateUrl(url) {
-  var pattern = /^(http|https):\/\/[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/
-  return pattern.test(url);
+  var expression = /(http?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|http?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+  var regex = new RegExp(expression);
+  return url.match(regex);
 }
 
 // listen for requests :)
