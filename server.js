@@ -83,51 +83,51 @@ app.post('/api/shorturl', (req, res) => {
   var url = req.body.url;
   var isValidUrl = validateUrl(url);
 
-  // if (!isValidUrl) {
-  //   return res.status(401).json({ error: 'invalid url'});
-  // }
+  if (!isValidUrl) {
+    return res.status(401).json({ error: 'invalid url'});
+  }
 
-  const REPLACE_REGEX = /^https?:\/\//i
-  const formattedUrl = url.replace(REPLACE_REGEX, '');
-  dns.lookup(formattedUrl, function (err, address, family) {
-    if (address == undefined || address == null) {
-      return res.status(401).json({ error: 'invalid url'});
-    }
+  try {
+    Url.findOne({ originalUrl: url }, (err, docUrl) => {
+      if (err) { 
+        return res.status(404).json({ error: 'url not found'});
+      }
 
-    try {
-      Url.findOne({ originalUrl: url }, (err, docUrl) => {
-        if (err) { 
-          return res.status(404).json({ error: 'url not found'});
-        }
-  
-        // url ja existente
-        if (docUrl) {
-          return res.json({ original_url: docUrl.originalUrl , short_url: docUrl.shortUrl });
-        }
-  
-        // cria a shortId code
-        const urlCode = shortid.generate();
-  
-        var newUrl = new Url({
-          originalUrl: url,
-          shortUrl: urlCode,
-          longUrl: `${baseUrl}/api/shorturl/${urlCode}`
-        });
-  
-        newUrl.save(function(err, data) {
-          if (err) 
-            return res.status(500).json('Server error');
-      
-            return res.json({original_url: url, short_url: urlCode});
-        });
-        
+      // url ja existente
+      if (docUrl) {
+        return res.json({ original_url: docUrl.originalUrl , short_url: docUrl.shortUrl });
+      }
+
+      // cria a shortId code
+      const urlCode = shortid.generate();
+
+      var newUrl = new Url({
+        originalUrl: url,
+        shortUrl: urlCode,
+        longUrl: `${baseUrl}/api/shorturl/${urlCode}`
       });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json('Server error');
-    }
-  });
+
+      newUrl.save(function(err, data) {
+        if (err) 
+          return res.status(500).json('Server error');
     
+          return res.json({original_url: url, short_url: urlCode});
+      });
+      
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json('Server error');
+  }
+
+  // const REPLACE_REGEX = /^https?:\/\//i
+  // const formattedUrl = url.replace(REPLACE_REGEX, '');
+  // dns.lookup(formattedUrl, function (err, address, family) {
+  //   if (address == undefined || address == null) {
+  //     return res.status(401).json({ error: 'invalid url'});
+  //   }    
+  // });
+
 });
 
 app.get('/api/shorturl/:short_url', (req, res) => {
@@ -143,9 +143,9 @@ app.get('/api/shorturl/:short_url', (req, res) => {
 })
 
 function validateUrl(url) {
-  var expression = /(http?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|http?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
-  var regex = new RegExp(expression);
-  return url.match(regex);
+  var expression = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';
+  var regex = new RegExp(expression, 'i');
+  return regex.test(url);
 }
 
 // listen for requests :)
