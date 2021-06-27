@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
-const uri = "mongodb+srv://broncasrafa:broncasrafaAdmin@cluster0.6fgsm.mongodb.net/db_shortner_url?retryWrites=true&w=majority";
+const uri = "";
 
 // const connectDB = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 // try {    
