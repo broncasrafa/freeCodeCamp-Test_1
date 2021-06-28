@@ -12,6 +12,10 @@ var dns = require('dns');
 var Url = require('./models/url');
 var UrlTested = require('./models/url_tested');
 
+var User = require('./models/user');
+var UserExercise = require('./models/user_exercise');
+var UserLogs = require('./models/user_logs');
+
 var app = express();
 
 var baseUrl = 'https://test-one-deploy.herokuapp.com';
@@ -41,6 +45,7 @@ app.get("/api/hello", function (req, res) {
   res.json({greeting: 'hello API'});
 });
 
+//#region [ exercicio 1 ]
 app.get('/api/timestamp/:date?', (req, res) => {
   var value = req.params.date;    
 
@@ -72,14 +77,18 @@ app.get('/api/timestamp/:date?', (req, res) => {
   res.json({ unix: unixResult, utc: utcResult });
 
 });
+//#endregion
 
+//#region [ exercicio 2 ]
 app.get('/api/whoami', (req, res) => {
   var ipaddress = req.ip;
   var language = req.headers['accept-language'];
   var software = req.headers['user-agent'];
   res.json({ ipaddress: ipaddress, language: language, software: software})
 })
+//#endregion
 
+//#region [ exercicio 3 ]
 app.post('/api/shorturl', (req, res) => {
   var url = req.body.url;
   var isValidUrl = validateUrl(url);
@@ -150,6 +159,164 @@ app.get('/api/shorturl/:short_url', (req, res) => {
     res.redirect(data.originalUrl);
   })
 })
+//#endregion
+
+app.post('/api/users', (req, res) => {
+  var username = req.body.username;
+  if (username == undefined || username == null || username == '' || username.trim().length == 0) {
+    return res.send('Path `username` is required.');
+  }
+
+  User.findOne({ username: username}, (err, user) => {
+    if (err) {
+      return res.json({ error: 'an error occurred'});
+    }
+    
+    if (user == null) {
+      var newUser = new User({ username: username });
+      newUser.save(newUser, (err, doc) => {
+        if (err) {
+          return res.send('an error occurred while trying creating new user');
+        }
+
+        return res.json(doc);
+        // User.findById(doc._id).select({ username: 1, _id: 1 }).exec((err, result) => {
+        //   if (err) {
+        //     return res.json({ error: 'an error occurred'});
+        //   }
+
+        //   return res.json(result);
+        // })
+        
+      })
+    } else {
+      return res.send('Username already taken');
+    }
+  });
+});
+
+app.get('/api/users', (req, res) => {
+  User.find().select({ _id: 1, username: 1}).exec((err, users) => {
+    if (err) {
+      return res.json({ error: 'an error occurred'});
+    }
+
+    return res.json(users);
+  })
+});
+
+app.post('/api/users/:_id/exercises', (req, res) => {
+  var description = req.body.description;
+  var duration = req.body.duration; 
+  var date = (req.body.date == undefined || req.body.date == '') ? new Date() : new Date(req.body.date);
+  var userId = req.params._id;
+  var utcResult = date.toUTCString();
+  if (utcResult == 'Invalid Date') {
+    return res.send(`Cast to date failed for value "${req.body.date}" at path "date"`);
+  }
+
+  if (description == undefined || description == '') {
+    return res.send('Path `description` is required.');
+  }
+
+  if (description == undefined || description == '') {
+    return res.send('Path `description` is required.');
+  }
+
+  if (description.length > 15) {
+    return res.send('description too long');
+  }
+
+  if (duration == undefined || duration == '') {
+    return res.send('Path `duration` is required.');
+  }
+
+  if (duration <= 0) {
+    return res.send('duration too short')
+  }
+
+  User.findById(userId, (err, user) => {
+    if (err) {
+      return res.send('user not found');
+    }
+
+    var newUserExercise = new UserExercise({
+      username: user.username,
+      duration: duration,
+      description: description,
+      date: date.toDateString()
+    });
+    newUserExercise.save((err, doc) => {
+      if (err) {
+        return res.send('an error occurred while trying creating new exercise');
+      }
+      return res.json(doc);
+    });
+  })
+
+  
+});
+
+app.get('/api/users/:_id/logs', (req, res) => {
+  var userId = req.params._id;
+  var limit = req.query.limit == undefined ? 10 : parseInt(req.query.limit);
+  var from_date = req.query.from;
+  var to_date = req.query.to;
+
+  User.findById(userId, (err, user) => {
+    if (err) {
+      return res.send('user not found');
+    }
+
+    // check if request query has value
+    if (Object.keys(req.query).length === 0) {
+      UserExercise.find({ username: user.username })
+      .select({ description: 1, duration: 1, date: 1 })
+      .limit(limit)
+      .exec((err, exercises) => {
+        if (err) {
+          return res.send('an error occurred while trying retrieve user exercises');
+        }
+
+        return res.json({
+          _id: user._id,
+          username: user.username,
+          count: exercises == null ? 0 : exercises.length,
+          log: exercises
+        })
+      });
+    } else {
+      
+      from_date = from_date == undefined ? new Date().toDateString() : from_date;
+      to_date = to_date == undefined ? new Date().toDateString() : to_date;
+
+      UserExercise.find({ username: user.username, date: {"$gte": from_date, "$lte": to_date} })
+          .select({ description: 1, duration: 1, date: 1 })
+          .limit(limit)
+          .exec((err, exercises) => {
+            if (err) {
+              console.log(err)
+              return res.send('an error occurred while trying retrieve user exercises');
+            }
+
+            return res.json({
+              _id: user._id,
+              username: user.username,
+              count: exercises == null ? 0 : exercises.length,
+              log: exercises
+            })
+          });
+    }
+
+/*
+
+*/
+
+
+    
+  })
+})
+
 
 function validateUrl(url) {
   var expression = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';

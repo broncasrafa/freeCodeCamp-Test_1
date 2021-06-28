@@ -13,6 +13,7 @@
 		"express": "^4.12.4",
 		"mongodb": "^3.6.9",
 		"mongoose": "^5.12.15",
+		"mongoose-validator": "^2.1.0",
 		"shortid": "^2.2.16",
 		"valid-url": "^1.0.9"
 	},
