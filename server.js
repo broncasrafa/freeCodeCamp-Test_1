@@ -212,27 +212,38 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   var userId = req.params._id;
   var utcResult = date.toUTCString();
   if (utcResult == 'Invalid Date') {
-    return res.send(`Cast to date failed for value "${req.body.date}" at path "date"`);
+    res.send(`Cast to date failed for value "${req.body.date}" at path "date"`);
+    return null;
   }
 
   if (description == undefined || description == '') {
-    return res.send('Path `description` is required.');
+    res.send('Path `description` is required.');
+    return null;
   }
 
   if (description == undefined || description == '') {
-    return res.send('Path `description` is required.');
+    res.send('Path `description` is required.');
+    return null;
   }
 
   if (description.length > 15) {
-    return res.send('description too long');
+    res.send('description too long');
+    return null;
+  }
+
+  if (isNaN(duration) == true) {
+    res.send(`Cast to Number failed for value "${duration}" at path "duration"`);
+    return null;
   }
 
   if (duration == undefined || duration == '') {
-    return res.send('Path `duration` is required.');
+    res.send('Path `duration` is required.');
+    return null;
   }
 
   if (duration <= 0) {
-    return res.send('duration too short')
+    res.send('duration too short');
+    return null;
   }
 
   User.findById(userId, (err, user) => {
