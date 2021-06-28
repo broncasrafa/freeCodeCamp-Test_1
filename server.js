@@ -251,6 +251,11 @@ app.post('/api/users/:_id/exercises', (req, res) => {
       return res.send('user not found');
     }
 
+    if (user == undefined || user == null) {
+      res.send('Cast to ObjectId failed for value ' + req.body.userId + ' at path "_id" for model "Users"')
+      return null
+    }
+
     var newUserExercise = new UserExercise({
       username: user.username,
       duration: duration,
@@ -270,9 +275,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 
 app.get('/api/users/:_id/logs', (req, res) => {
   var userId = req.params._id;
-  var limit = req.query.limit == undefined ? 10 : parseInt(req.query.limit);
-  var from_date = req.query.from;
-  var to_date = req.query.to;
+  
 
   User.findById(userId, (err, user) => {
     if (err) {
@@ -283,7 +286,6 @@ app.get('/api/users/:_id/logs', (req, res) => {
     if (Object.keys(req.query).length === 0) {
       UserExercise.find({ username: user.username })
       .select({ description: 1, duration: 1, date: 1 })
-      .limit(limit)
       .exec((err, exercises) => {
         if (err) {
           return res.send('an error occurred while trying retrieve user exercises');
@@ -297,11 +299,22 @@ app.get('/api/users/:_id/logs', (req, res) => {
         })
       });
     } else {
-      
-      from_date = from_date == undefined ? new Date().toDateString() : from_date;
-      to_date = to_date == undefined ? new Date().toDateString() : to_date;
+      var limit = req.query.limit;
+      if(limit == undefined) { limit = 10 };
+      if(isNaN(limit)) { limit = 10; }
 
-      UserExercise.find({ username: user.username, date: {"$gte": from_date, "$lte": to_date} })
+      var from_date = req.query.from == undefined ? new Date('1000-01-01') : new Date(req.query.from);
+      var to_date = req.query.to == undefined ? new Date() : new Date(req.query.to);
+
+      if (from_date == 'Invalid Date') {
+        from_date = new Date('1000-01-01');
+      }
+
+      if (to_date == 'Invalid Date') {
+        to_date = new Date();
+      }
+
+      UserExercise.find({ username: user.username, date: {"$gte": from_date.toDateString(), "$lte": to_date.toDateString()} })
           .select({ description: 1, duration: 1, date: 1 })
           .limit(limit)
           .exec((err, exercises) => {
