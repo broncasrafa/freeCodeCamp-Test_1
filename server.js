@@ -8,6 +8,8 @@ var shortid = require('shortid');
 var bodyParser = require("body-parser");
 var connectDB = require('./config/db');
 var dns = require('dns');
+var cors = require('cors');
+var fileupload = require("express-fileupload");
 
 var Url = require('./models/url');
 var UrlTested = require('./models/url_tested');
@@ -17,6 +19,9 @@ var UserExercise = require('./models/user_exercise');
 var UserLogs = require('./models/user_logs');
 
 var app = express();
+
+app.use(cors());
+app.use(fileupload());
 
 var baseUrl = 'https://test-one-deploy.herokuapp.com';
 
@@ -161,6 +166,7 @@ app.get('/api/shorturl/:short_url', (req, res) => {
 })
 //#endregion
 
+//#region [ exercicio 4 ]
 app.post('/api/users', (req, res) => {
   var username = req.body.username;
   if (username == undefined || username == null || username == '' || username.trim().length == 0) {
@@ -340,7 +346,19 @@ app.get('/api/users/:_id/logs', (req, res) => {
     
   })
 })
+//#endregion
 
+//#region [ exercicio 5 ]
+app.post('/api/fileanalyse', function(req, res) {
+  if (!req.files) {
+    return res.send('File not found');
+  }
+
+  var file = req.files.upfile;
+
+  res.json({name: file.name, type: file.mimetype, size: file.size});
+})
+//#endregion
 
 function validateUrl(url) {
   var expression = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';
