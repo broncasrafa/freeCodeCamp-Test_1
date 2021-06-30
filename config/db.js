@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
-const uri = "mongodb+srv://broncasrafa:broncasrafaAdmin@cluster0.6fgsm.mongodb.net/db_tracker?retryWrites=true&w=majority";
+const uri = "mongodb+srv://YOUR-USERNAME:YOUR-PASSWORD@cluster0.6fgsm.mongodb.net/db_tracker?retryWrites=true&w=majority";
 // 
 
 const connectDB = async () => {
