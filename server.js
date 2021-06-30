@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // connect to mongoDB
-connectDB();
+//connectDB();
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
