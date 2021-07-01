@@ -12,7 +12,7 @@ var validate = require('mongoose-validator');
 
 const userExerciseSchema = new Schema({
     username: String,
-    date: { type: String, default: Date.now },
+    date: { type: Date, default: Date.now },
     duration: { type: Number, required: true },
     description: { type: String, required: true, maxlength: 15 }
 }, { versionKey: false });

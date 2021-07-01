@@ -4,7 +4,8 @@
 	"description": "An FCC Backend Challenge",
 	"main": "server.js",
 	"scripts": {
-		"start": "node server.js"
+		"start": "node server.js",
+		"serve": "nodemon server.js"
 	},
 	"dependencies": {
 		"body-parser": "^1.19.0",
@@ -15,6 +16,7 @@
 		"mongodb": "^3.6.9",
 		"mongoose": "^5.12.15",
 		"mongoose-validator": "^2.1.0",
+		"nodemon": "^2.0.9",
 		"shortid": "^2.2.16",
 		"valid-url": "^1.0.9"
 	},

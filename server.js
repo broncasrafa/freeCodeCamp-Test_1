@@ -214,8 +214,15 @@ app.get('/api/users', (req, res) => {
 app.post('/api/users/:_id/exercises', (req, res) => {
   var description = req.body.description;
   var duration = req.body.duration; 
-  var date = (req.body.date == undefined || req.body.date == '') ? new Date() : new Date(req.body.date);
+  var date = new Date();
   var userId = req.params._id;
+
+  if (req.body.date == undefined || req.body.date == '') {
+    date = new Date();
+  } else {
+    date = new Date(req.body.date);
+  }
+
   var utcResult = date.toUTCString();
   if (utcResult == 'Invalid Date') {
     res.send(`Cast to date failed for value "${req.body.date}" at path "date"`);
@@ -266,13 +273,21 @@ app.post('/api/users/:_id/exercises', (req, res) => {
       username: user.username,
       duration: duration,
       description: description,
-      date: date.toDateString()
+      date: date
     });
     newUserExercise.save((err, doc) => {
       if (err) {
         return res.send('an error occurred while trying creating new exercise');
       }
-      return res.json(doc);
+
+      var objResult = {
+        _id: doc._id,
+        username: doc.username,
+        duration: doc.duration,
+        description: doc.description,
+        date: new Date(doc.date.toString()).toDateString()
+      };
+      return res.json(objResult);
     });
   })
 
@@ -282,7 +297,6 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 app.get('/api/users/:_id/logs', (req, res) => {
   var userId = req.params._id;
   
-
   User.findById(userId, (err, user) => {
     if (err) {
       return res.send('user not found');
@@ -296,12 +310,22 @@ app.get('/api/users/:_id/logs', (req, res) => {
         if (err) {
           return res.send('an error occurred while trying retrieve user exercises');
         }
+        
+        var listExercises = [];
+        exercises.forEach((item) => {
+          listExercises.push({
+            _id: item._id,
+            duration: item.duration,
+            description: item.description,
+            date: new Date(item.date.toString()).toDateString()
+          });
+        });       
 
         return res.json({
           _id: user._id,
           username: user.username,
           count: exercises == null ? 0 : exercises.length,
-          log: exercises
+          log: listExercises
         })
       });
     } else {
@@ -320,22 +344,41 @@ app.get('/api/users/:_id/logs', (req, res) => {
         to_date = new Date();
       }
 
-      UserExercise.find({ username: user.username, date: {"$gte": from_date.toDateString(), "$lte": to_date.toDateString()} })
-          .select({ description: 1, duration: 1, date: 1 })
-          .limit(parseInt(limit))
-          .exec((err, exercises) => {
-            if (err) {
-              console.log(err)
-              return res.send('an error occurred while trying retrieve user exercises');
-            }
+      console.log('from: ', from_date);
+      console.log('to: ', to_date);
 
-            return res.json({
-              _id: user._id,
-              username: user.username,
-              count: exercises == null ? 0 : exercises.length,
-              log: exercises
-            })
+      UserExercise.find({ 
+        username: user.username, 
+        date: {
+          $gte: new Date(from_date.getFullYear(), from_date.getMonth(), from_date.getDate()), 
+          $lte: new Date(to_date.getFullYear(), to_date.getMonth(), to_date.getDate())
+        } 
+      })
+      .select({ description: 1, duration: 1, date: 1 })
+      .limit(parseInt(limit))
+      .exec((err, exercises) => {
+        if (err) {
+          console.log(err)
+          return res.send('an error occurred while trying retrieve user exercises');
+        }
+
+        var listExercises = [];
+        exercises.forEach((item) => {
+          listExercises.push({
+            _id: item._id,
+            duration: item.duration,
+            description: item.description,
+            date: new Date(item.date.toString()).toDateString()
           });
+        });
+
+        return res.json({
+          _id: user._id,
+          username: user.username,
+          count: exercises == null ? 0 : exercises.length,
+          log: listExercises
+        })
+      });
     }
 
 /*
