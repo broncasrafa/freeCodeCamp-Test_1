@@ -281,11 +281,11 @@ app.post('/api/users/:_id/exercises', (req, res) => {
       }
 
       var objResult = {
-        _id: doc._id,
+        _id: user._id,
         username: doc.username,
+        date: new Date(doc.date.toString()).toDateString(),
         duration: doc.duration,
-        description: doc.description,
-        date: new Date(doc.date.toString()).toDateString()
+        description: doc.description        
       };
       return res.json(objResult);
     });
